@@ -12,12 +12,20 @@ jobs:
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Descomprimir ZIP y buscar Gradle
+      - name: Buscar y descomprimir ZIP
         run: |
-          unzip source.zip -d ./proyecto
-          # Este comando busca la carpeta donde está el gradlew
+          # Busca cualquier archivo .zip en la raíz sin importar su nombre
+          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "❌ Error: No se encontró ningún archivo .zip en la raíz del repositorio."
+            exit 1
+          fi
+          echo "✅ Archivo encontrado: $ZIP_FILE"
+          unzip "$ZIP_FILE" -d ./proyecto
+          
+          # Busca la carpeta donde está el gradlew (el motor de compilación)
           DIR=$(find ./proyecto -name "gradlew" -exec dirname {} \; | head -n 1)
-          echo "La carpeta del proyecto es: $DIR"
+          echo "✅ Carpeta del proyecto: $DIR"
           echo "PROJECT_DIR=$DIR" >> $GITHUB_ENV
 
       - name: Configurar Java 17
@@ -36,5 +44,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          # Busca el APK en cualquier carpeta donde se haya generado
           path: "**/app-debug.apk"
